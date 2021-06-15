@@ -87,13 +87,13 @@ class Fluidity_Chem:
         Ph_Cov = 31.4, # (km GPa^-1)
         #Ph_Cov = 32.37, # (km GPa^-1)
         
-        # Avagadro's Number
+        # Avogadro's Number
         N = 6.022 * (10**23), # (mol^-1).
         
         # Gas Constant
         R = 8.314, # (J mol^-1 K^-1).
 
-        # Increment the algorythm steps in to calculate composition along the melt path.
+        # Increment the algorithm steps in to calculate composition along the melt path.
         X_inc = 0.0001,
         # Increment in depth space.
         h_inc = 1., # (km)
