@@ -19,7 +19,10 @@ class Fluidity_Chem:
     and therefore melt composition, developed by Patrick Ball.
     """
 
-    def __init__(self,
+    def __init__(self, bulk_H2O, mod_cpx, A1, A2, A3, B1, B2, B3, C1, C2, C3, r1, r2,
+                 beta1, beta2, K, gamma, D_H2O, chi1, chi2, lam, grav, heat_cap, expans_s,
+                 expans_f, density_s, density_f, melt_entropy, dP, Ph_Cov, X_inc,
+                 h_inc, X_0, spl_out, plg_in, gnt_out, spl_in, Fn_spl, Fn_gnt):
         
         ##########################################
         # Parameters to calculate melt paths.
@@ -27,55 +30,63 @@ class Fluidity_Chem:
         # Katz et al., (2003) - G-cubed.
         ##########################################
          
-        bulk_H2O=0.,  # Bulk water content (wt%).
+        self.bulk_H2O=0.  # Bulk water content (wt%).
 
         # mod_cpx updated here as described in the Supplementary Materials.
-        mod_cpx=0.18, # Modal clinopyroxene.
+        self.mod_cpx=0.18 # Modal clinopyroxene.
 
         # Coefficients used to define solidus.
-        A1=1085.7, A2=132.9, A3=-5.1, # oC, oC GPa(^-1), oC GPa(^-2).
+        self.A1=1085.7 # oC.
+        self.A2=132.9 # oC GPa(^-1).
+        self.A3=-5.1 # oC GPa(^-2).
 
         # B1 updated here as described in the Supplementary Materials.
         # Coefficients used to define lherzolite liquidus.
-        B1=1520., B2=80., B3=-3.2, # oC, oC GPa(^-1), oC GPa(^-2).
+        self.B1=1520 # oC.
+        self.B2=80. # oC GPa(^-1).
+        self.B3=-3.2 # C GPa(^-2).
 
         # Coefficients used to define bulk liquidus.
-        C1=1780., C2=45., C3=-2., # oC, oC GPa(^-1), oC GPa(^-2).
+        self.C1=1780. # oC.
+        self.C2=45. # oC GPa(^-1).
+        self.C3=-2. # oC GPa(^-2).
 
         # r1 and r2 updated here as described in the Supplementary Materials.
         # Coefficients used to calculate reaction coefficient of cpx.
-        r1=0.94, r2=-0.1, # cpx/melt, cpx/melt GPa(^-1).
+        self.r1=0.94 # cpx/melt.
+        self.r2=-0.1 # cpx/melt GPa(^-1).
 
         # beta2 updated here as described in the Supplementary Materials.
         # Coefficients used to calculate melt fraction.
-        beta1=1.5, beta2=1.2,
+        self.beta1=1.5
+        self.beta2=1.2
 
         # Coefficients used to calculate hydrous melt correction.
-        K=43., # oC wt%^(-gamma).
-        gamma=0.75,
+        self.K=43. # oC wt%^(-gamma).
+        self.gamma=0.75
 
         # Partition coefficient of water. Assumed similar to Ce.
-        D_H2O=0.01,
+        self.D_H2O=0.01
 
         # Coefficients used to calculate water saturation.
-        chi1=12., # wt% GPa^(-lam).
-        chi2=1., # wt% GPa^(-1).
-        lam=0.6,
+        self.chi1=12. # wt% GPa^(-lam).
+        self.chi2=1. # wt% GPa^(-1).
+        self.lam=0.6
 
         # Some material properties.
-        grav=9.81, # Gravity, m s^(-2)
+        self.grav=const.g # Gravity, m s^(-2)
         # Specific Heat Capacity and Thermal expansivity of the solid
         # are from Shorttle et al., (2014) - EPSL
-        heat_cap=1187., # Specific heat capactiy, J kg^(-1) K^(-1).
-        expans_s=30.*(10.**-6.), # Thermal expansivity of solid, K^(-1).
-        expans_f=68.*(10.**-6.), # Thermal expansivity of fluid, K^(-1).
-        density_s=3300., # STP density of solid, kg m^(-3).
-        density_f=2900., # STP density of fluid, kg m^(-3).
+        self.heat_cap=1187. # Specific heat capactiy, J kg^(-1) K^(-1).
+        self.expans_s=30.*(10.**-6.) # Thermal expansivity of solid, K^(-1).
+        self.expans_f=68.*(10.**-6.) # Thermal expansivity of fluid, K^(-1).
+        self.density_s=3300. # STP density of solid, kg m^(-3).
+        self.density_f=2900. # STP density of fluid, kg m^(-3).
         # Entropy of melting from Shorttle et al., (2014) - EPSL
-        melt_entropy=407., # Entropy of melting, J kg^(-1) K^(-1).
+        self.melt_entropy=407. # Entropy of melting, J kg^(-1) K^(-1).
 
         # Pressure increment.
-        dP = -0.0001, # GPa
+        self.dP = -0.0001 # GPa
 
 #-------------------------------------------------------------
 
@@ -84,80 +95,26 @@ class Fluidity_Chem:
         ###################
 
         # Constant for Pressure to Depth Conversion (km GPa^-1)
-        Ph_Cov = 31.4, # (km GPa^-1)
-        #Ph_Cov = 32.37, # (km GPa^-1)
-        
-        # Avogadro's Number
-        N = 6.022 * (10**23), # (mol^-1).
-        
-        # Gas Constant
-        R = 8.314, # (J mol^-1 K^-1).
+        self.Ph_Cov = 31.4 # (km GPa^-1)
+        #self.Ph_Cov = 32.37 # (km GPa^-1)
 
         # Increment the algorithm steps in to calculate composition along the melt path.
-        X_inc = 0.0001,
+        self.X_inc = 0.0001
         # Increment in depth space.
-        h_inc = 1., # (km)
+        self.h_inc = 1. # (km)
         # Initial melt fraction.
-        X_0 = 0.,
+        self.X_0 = 0.
 
         # Depth of Phase Transitions
-        spl_out = 25, # Depth above which spinel is no longer stable (km)
-        plg_in = 35, # Depth above which plagioclase is stable (km)
-        gnt_out = 63, # Depth above which garnet is no longer stable (km)
-        spl_in = 72, # Depth above which spinel is stable (km)
+        self.spl_out = 25 # Depth above which spinel is no longer stable (km)
+        self.plg_in = 35 # Depth above which plagioclase is stable (km)
+        self.gnt_out = 63 # Depth above which garnet is no longer stable (km)
+        self.spl_in = 72 # Depth above which spinel is stable (km)
 
         # List of initial mineral proportions in the lherzolite source (Fn).
         # Listed in order: ol, opx, cpx, plg, spl, gnt.
-        Fn_spl = [0.578, 0.27, 0.119, 0., 0.033, 0.],
-        Fn_gnt = [0.598, 0.211, 0.0758, 0., 0., 0.115]):
-
-#-------------------------------------------------------------
-
-        ###################
-        # Define class parameters.
-        ###################
-        
-        self.bulk_H2O = bulk_H2O
-        self.mod_cpx = mod_cpx
-        self.A1 = A1
-        self.A2 = A2
-        self.A3 = A3
-        self.B1 = B1
-        self.B2 = B2
-        self.B3 = B3
-        self.C1 = C1
-        self.C2 = C2
-        self.C3 = C3
-        self.r1 = r1
-        self.r2 = r2
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.K = K
-        self.gamma = gamma
-        self.D_H2O = D_H2O
-        self.chi1 = chi1
-        self.chi2 = chi2
-        self.lam = lam
-        self.grav = grav
-        self.heat_cap = heat_cap
-        self.expans_s = expans_s
-        self.expans_f = expans_f
-        self.density_s = density_s
-        self.density_f = density_f
-        self.melt_entropy = melt_entropy
-        self.dP = dP
-        self.Ph_Cov = Ph_Cov
-        self.N = N
-        self.R = R
-        self.h_inc = h_inc
-        self.X_inc = X_inc
-        self.X_0 = X_0
-        self.spl_out = spl_out
-        self.plg_in = plg_in
-        self.gnt_out = gnt_out
-        self.spl_in = spl_in
-        self.Fn_spl = Fn_spl
-        self.Fn_gnt = Fn_gnt
+        self.Fn_spl = [0.578, 0.27, 0.119, 0., 0.033, 0.]
+        self.Fn_gnt = [0.598, 0.211, 0.0758, 0., 0., 0.115]
         
 #-------------------------------------------------------------
 
@@ -258,7 +215,7 @@ class Fluidity_Chem:
         (1989, JoP).
         """
 
-        return (Tp+273.15) * np.exp( (self.expans_s*(P * 1e9))/(self.density_s * self.heat_cap)) - 273.15
+        return const.convert_temperature(Tp, 'Celsius', 'Kelvin') * np.exp( (self.expans_s*(P * const.giga))/(self.density_s * self.heat_cap)) - 273.15
 
 
     def find_solidus_adiabat_intersection(self, Tp):
@@ -408,7 +365,7 @@ class Fluidity_Chem:
         See also EQ. D7, McKenzie (1984, JoP).
         """
 
-        T = args[0] + 273.15
+        T = const.convert_temperature(args[0], 'Celsius', 'Kelvin')
         cpx = args[1]
 
         dTdP_F = self.calc_dTdP_F(P, F, cpx_present=cpx)
@@ -440,7 +397,7 @@ class Fluidity_Chem:
         dTdP_S = F * ((self.expans_f/(10.**-6.)) / (self.density_f/1000.))
         dTdP_S += (1. - F) * ((self.expans_s/(10.**-6.)) / (self.density_s/1000.))
         dTdP_S -= self.melt_entropy * dFdP_S
-        dTdP_S *= (T + 273.15) / self.heat_cap
+        dTdP_S *= const.convert_temperature(T, 'Celsius', 'Kelvin') / self.heat_cap
 
         return dTdP_S
 
@@ -475,7 +432,7 @@ class Fluidity_Chem:
 
 #-------------
 
-    def calc_PTX_Ball(self, Tp, P, T, X_full):
+    def calc_PTX(self, Tp, P, T, X_full):
 
         """
         Generates regularly spaced arrays of Pressure (P), Temperature (T) and Melt Fraction (X)
@@ -509,13 +466,13 @@ class Fluidity_Chem:
         P = np.interp(X, X_full, P) # GPa
 
         # Convert to Kelvin
-        T = T + 273.15
+        T = const.convert_temperature(T, 'Celsius', 'Kelvin')
 
         return P, T, X
 
 #-------------
 
-    def calc_PTX_h_Ball(self, P, T, X):
+    def calc_PTX_h(self, P, T, X):
 
         """
         Calculates X as a function of Depth, h, in km.
@@ -769,10 +726,7 @@ class Fluidity_Chem:
         EQ 4 in Supplementary Material
         """
 
-        N = self.N
-        R = self.R
-
-        D_n = Do * np.exp(-4. * np.pi * N * E * ((0.5 * ro * (ro - ri)**2.) - ((ro - ri)**3.)/3.) / (R * T))
+        D_n = Do * np.exp(-4. * np.pi * const.Avagadro * E * ((0.5 * ro * (ro - ri)**2.) - ((ro - ri)**3.)/3.) / (const.R * T))
 
         return (D_n)
 
@@ -787,9 +741,6 @@ class Fluidity_Chem:
         Other valencies determined using methods in Wood and Blundy, 2014.
         j 1-5 = ol, opx, cpx, plg, spl, gnt
         """
-
-        R = self.R
-        N = self.N
 
         Dn = {}
         for j in range(0,6,1):
@@ -860,7 +811,7 @@ class Fluidity_Chem:
                     # Constants for lattice strain equation calculated
                     # using parameterization of Yao et al (2012)
                     # and listed in EQ 10-12 in Supplementary Material.
-                    a = - 5.37 + (38700./(R*T[i]))
+                    a = - 5.37 + (38700./(const.R*T[i]))
                     Do = np.exp(a + (3.54 * X_Al_T) + (3.56 * X_Ca_M2))
                     ro = 0.69 + (0.23 * X_Mg_M2) + (0.43 * X_Ca_M2)
                     E = (- 1.37 + (1.85 * ro) - (0.53 * X_Ca_M2)) * 10.**3.
@@ -873,7 +824,7 @@ class Fluidity_Chem:
                         ri_Mg = 0.72 * 10.**-10.
                         
                         # Calculate D using lattice strain EQ (EQ 4 in Supplementary Materials).
-                        Dn[str(j)][i] = np.exp(-4.*np.pi*N*E_v2*((ri_Mg/2.)*(ri_Mg**2. - ri[1]**2.)+(1./3.)*(ri[1]**3. - ri_Mg**3.))/(R*T[i]))
+                        Dn[str(j)][i] = np.exp(-4.*np.pi*const.Avagadro*E_v2*((ri_Mg/2.)*(ri_Mg**2. - ri[1]**2.)+(1./3.)*(ri[1]**3. - ri_Mg**3.))/(const.R*T[i]))
 
                     # If valency = 3+ calculate D using lattice strain EQ (EQ 4 in Supplementary Materials).
                     elif val == 3.:
@@ -931,7 +882,7 @@ class Fluidity_Chem:
                     # Constants for lattice strain equation calculated
                     # using parameterization of Sun and Liang (2012)
                     # and listed in EQ 21-23 in Supplementary Material.
-                    a = ((7.19 * 10.**4.) / (R * T[i])) - 7.14
+                    a = ((7.19 * 10.**4.) / (const.R * T[i])) - 7.14
                     Do = np.exp(a + (4.37 * X_Al_T) + (1.98 * X_Mg_M2) - (0.91 * X_H2O))
                     ro = 1.066 - (0.104 * X_Al_M1) - (0.212 * X_Mg_M2)
                     E = ((2.27 * ro) - 2.) * 10.**3.
@@ -949,7 +900,7 @@ class Fluidity_Chem:
                         ro_v1 = (ro + 0.12) * 10.**-10.
                         # All +1 ions calculated with respect to Na
                         b = (ro_v1/2.)*(ri_Na**2. - ri[1]**2.) + (1./3.)*(ri[1]**3. - ri_Na**3.)
-                        Dn[str(j)][i] = D_Na * np.exp((-4. * np.pi * N * E_v1 * b)/(R * T[i]))
+                        Dn[str(j)][i] = D_Na * np.exp((-4. * np.pi * const.Avagadro * E_v1 * b)/(const.R * T[i]))
                     
                     elif val == 2.:
                         # For 2+ cations use parameterization as listed in Wood and Blundy, (2014).
@@ -977,8 +928,8 @@ class Fluidity_Chem:
                         # Using parameterisation of Landwehr et al., 2001 for Th
                         ri_Th = 1.035 * 10.**-10.
                         Y_Mg_M1 = np.exp(((1. - X_Mg_M1)**2.) * 902. / T[i])
-                        Y_Th_M2 = np.exp(((ro_v4/2.)*(ri_Th - ro_v4)**2. + (1./3.)*(ri_Th - ro_v4)**3.)*(4*np.pi*N*E_v4)/(R*T[i])) 
-                        D_Th = np.exp((214790. - (175.5*T[i]) + (16420.*P[i]) - (1500.*P[i]**2.))/R*T[i]) * X_Mg_Mel / (X_Mg_M1 * Y_Mg_M1 * Y_Th_M2)
+                        Y_Th_M2 = np.exp(((ro_v4/2.)*(ri_Th - ro_v4)**2. + (1./3.)*(ri_Th - ro_v4)**3.)*(4*np.pi*const.Avagadro*E_v4)/(const.R*T[i])) 
+                        D_Th = np.exp((214790. - (175.5*T[i]) + (16420.*P[i]) - (1500.*P[i]**2.))/const.R*T[i]) * X_Mg_Mel / (X_Mg_M1 * Y_Mg_M1 * Y_Th_M2)
                         b = (ro_v4/2.)*(ri_Th**2. - ri[1]**2.) + (1./3.)*(ri[1]**3. - ri_Th**3.)
                         Dn[str(j)][i] = D_Th*np.exp((-910.17*E_v4*b)/T[i])
                     
@@ -1006,7 +957,7 @@ class Fluidity_Chem:
                     # Constants for lattice strain equation calculated
                     # using parameterization of Sun and Liang (2013)
                     # and listed in EQ 39-41 in Supplementary Material.
-                    Do = np.exp(-2.05 + ((91700. - (3471.3*P[i]) + (91.35*P[i]**2.))/(R*T[i])) - 1.02 * F_Ca)
+                    Do = np.exp(-2.05 + ((91700. - (3471.3*P[i]) + (91.35*P[i]**2.))/(const.R*T[i])) - 1.02 * F_Ca)
                     ro = 0.78 + (0.155 * F_Ca)
                     E = (-1.62 + (2.29 * ro)) * 10.**3.                 
 
@@ -1020,11 +971,11 @@ class Fluidity_Chem:
                     elif val == 2.:
                         ri_Mg = 0.72 * 10.**-10.
                         F_Ca = (-0.247 * X[i]) + 0.355
-                        D_Mg = np.exp((258210. - (141.5*T[i]) + (5418.*P[i]))/(3*R*T[i])) / np.exp((19000. * (F_Ca**2.))/(R*T[i]))
+                        D_Mg = np.exp((258210. - (141.5*T[i]) + (5418.*P[i]))/(3*const.R*T[i])) / np.exp((19000. * (F_Ca**2.))/(const.R*T[i]))
                         ro_v2 = (0.053 + ro) * 10.**-10.
                         E_v2 = (2./3.) * E * 10.**9.
                         b = (ro_v2/2.)*(ri_Mg**2. - ri[1]**2.) + (1./3.)*(ri[1]**3. - ri_Mg**3.)
-                        Dn[str(j)][i] = D_Mg * np.exp(-4. * np.pi * N * E_v2 * b / (R * T[i]))        
+                        Dn[str(j)][i] = D_Mg * np.exp(-4. * np.pi * const.Avagadro * E_v2 * b / (const.R * T[i]))        
 
                     # For 4+ cations constants for lattice strain equation calculated
                     # using parameterization of Mallmann and O'Neill, 2007
@@ -1063,7 +1014,7 @@ class Fluidity_Chem:
 
 #-------------
 
-    def dcs_dX(self, X, cs, D_bar, P_bar):
+    def calc_dcs_dX(self, X, cs, D_bar, P_bar):
         """
         Combination of EQ 3 + 4 from White et al., 1992.
         Must be solved using 4th order Runge Kutta scheme.
@@ -1078,7 +1029,7 @@ class Fluidity_Chem:
 
 #-------------
 
-    def melt_comp_Ball(self, cs_0, X, D_bar, P_bar):
+    def calc_melt_comp(self, cs_0, X, D_bar, P_bar):
         """
         Calculates melt composition at each step along the meltpath.
      
@@ -1109,10 +1060,10 @@ class Fluidity_Chem:
             else:
                 # Once concentration of element in the solid is exhausted cs and cl = 0.
                 if (cs[i] > 0.0001):
-                    k1 = 1. * self.dcs_dX( X[i],             cs[i],                D_bar[i], P_bar[i] )
-                    k2 = 1. * self.dcs_dX( X[i] + 0.5*X_inc, cs[i] + X_inc*0.5*k1, ((D_bar[i]+D_bar[i+1]) / 2.), ((P_bar[i]+P_bar[i+1]) / 2.) )
-                    k3 = 1. * self.dcs_dX( X[i] + 0.5*X_inc, cs[i] + X_inc*0.5*k2, ((D_bar[i]+D_bar[i+1]) / 2.), ((P_bar[i]+P_bar[i+1]) / 2.) )
-                    k4 = 1. * self.dcs_dX( X[i] + X_inc,     cs[i] + X_inc*k3,     D_bar[i+1], P_bar[i+1] )
+                    k1 = 1. * self.calc_dcs_dX( X[i],             cs[i],                D_bar[i], P_bar[i] )
+                    k2 = 1. * self.calc_dcs_dX( X[i] + 0.5*X_inc, cs[i] + X_inc*0.5*k1, ((D_bar[i]+D_bar[i+1]) / 2.), ((P_bar[i]+P_bar[i+1]) / 2.) )
+                    k3 = 1. * self.calc_dcs_dX( X[i] + 0.5*X_inc, cs[i] + X_inc*0.5*k2, ((D_bar[i]+D_bar[i+1]) / 2.), ((P_bar[i]+P_bar[i+1]) / 2.) )
+                    k4 = 1. * self.calc_dcs_dX( X[i] + X_inc,     cs[i] + X_inc*k3,     D_bar[i+1], P_bar[i+1] )
                     cs[i+1] = (cs[i] + (X_inc/6.) * (k1 + 2.*k2 + 2.*k3 + k4))
                     cl[i] = cs[i] * (1. - X[i])/(D_bar[i] - (P_bar[i] * X[i]))
                     # Forces element to stay in the melt phase
@@ -1127,7 +1078,7 @@ class Fluidity_Chem:
     
 #-------------
 
-    def calc_melt_mineralogy_Ball(self, X, P, X_km, h_km, h_dash, eNd):
+    def calc_melt_mineralogy(self, X, P, X_km, h_km, h_dash, eNd):
         """
         Calculates mineralogy and melt stoichiometry as a function of depth.        
         """
@@ -1143,7 +1094,7 @@ class Fluidity_Chem:
 # Final Routine to Calculate Melt Composition for a Given Incompatible Element Along a Melt Path
 #-------------    
 
-    def Ball_Fluidity(self, Tp, eNd, Conc1, Conc2, Part, VAL, RI, elements, party, parttemp, partKatzF):
+    def calc_particle_comp(self, Tp, eNd, Conc1, Conc2, Part, VAL, RI, elements, party, parttemp, partKatzF):
 
         # Make dictionary of elemental instantaneous concentrations for each element (cl)
         # outputted for each timestep in the input model (el_cl).
@@ -1152,13 +1103,13 @@ class Fluidity_Chem:
         # Take pressure, temperature, melt fraction paths from model (party, parttemp, partKatzF)
         # which are outputted at each time step and generate paths at Constant Intervals of melt fraction.
         # P = pressure, T = temperature, X = melt fraction.
-        P, T, X = self.calc_PTX_Ball(Tp, party, parttemp, partKatzF)
+        P, T, X = self.calc_PTX(Tp, party, parttemp, partKatzF)
             
         # Convert Melt Path from constant intervals of X to constant intervals of depth.
         # These are used to calculate melt fractions which correspond to transition zones
         # which are defined in depth space.
         # h = depth in intervals of X_inc, h_km = depth in 1 km intervals, h_dash = , X_km = X in 1 km depth intervals.
-        h, h_km, h_dash, X_km = self.calc_PTX_h_Ball(P, T, X)
+        h, h_km, h_dash, X_km = self.calc_PTX_h(P, T, X)
         
         # If the length of the line is <2 then it cannot be integrated to calculate el_cl
         # and so el_cl = nan.
@@ -1174,7 +1125,7 @@ class Fluidity_Chem:
             # Determine Melt Fractions Corresponding to Mantle Phase Transitions (X_gnt_out, X_spl_in).
             # Calculate modal mineralogy (Fn), and melt stoichiometry (pn) as a function of X.
             h_dash = int(h_dash * -1.)
-            Fn, pn, X_gnt_out, X_spl_in = self.calc_melt_mineralogy_Ball(X, P, X_km, h_km, h_dash, eNd)
+            Fn, pn, X_gnt_out, X_spl_in = self.calc_melt_mineralogy(X, P, X_km, h_km, h_dash, eNd)
            
             #Calculate Incompatible Element Composition for each element in elements.   
             for i in elements:
@@ -1195,7 +1146,7 @@ class Fluidity_Chem:
                 D_bar, P_bar = self.calc_D_Bar_P_Bar_Ball(X, Dn, Fn, pn)
                 
                 # Calculate cl 
-                cl= self.melt_comp_Ball(cs_0, X, D_bar, P_bar)
+                cl= self.calc_melt_comp(cs_0, X, D_bar, P_bar)
                 
                 # Interpolate cl at each time step
                 el_cl[str(i)] = np.interp(partKatzF, X, cl)
