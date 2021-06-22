@@ -89,7 +89,7 @@ where 8 is changed to the number of processors that can be used.
 
 # Post Implementation
 
-Model yeilds one csv file for each processor used to run 
+Model yields one csv file for each processor used to run 
 Fluidity_Optimize_Parallel.py
 
 Headers (i.e., first row) for all but one of the csv files should be removed
