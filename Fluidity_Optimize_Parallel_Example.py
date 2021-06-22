@@ -14,6 +14,7 @@ import os
 import vtk
 import numpy as np
 import pandas as pd
+import scipy.constants as const
 from glob import glob
 from mpi4py import MPI
 
@@ -71,13 +72,13 @@ min_num_steps = 0
 max_num_steps = 51
 
 # Include potential temperature of system in oC
-Tp = 1598. - 273.
+Tp = const.convert_temperature(1598., 'Kelvin', 'Celsius')
 
 # Length of the Y axis in km
 Max_Y_Axis = 1000000.
 
 # Gravity (m/s^2)
-grav = 9.81
+grav = const.g
 
 # Density of Solid Rock (kg/m^3)
 density = 3300.
@@ -86,6 +87,9 @@ density = 3300.
 # depleted (eNd = 10) mantle.
 eNd = 10.
 
+# One million years in seconds
+Ma_in_seconds = 60*60*24*365.2425*const.mega
+
 # Set elements to calculate concentrations of
 elements = ['La','Ce','Pr','Nd','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Na','Ti','Hf','Rb','Sr','Th','U','Pb','Nb','Zr','Y','Ta','Sc','V','Cr','K','P','Ba']
 
@@ -93,7 +97,8 @@ elements = ['La','Ce','Pr','Nd','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu
 H2O = (((10 - eNd)/10.) * 0.00028) + ((eNd/10.) * 0.000154)
 
 # Set Melt as identifier for class Fluidity_Chem
-Melt = Fluidity_Chem(bulk_H2O=H2O)
+Melt = Fluidity_Chem()
+Melt.bulk_H2O=H2O
 
 
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~###
@@ -102,9 +107,9 @@ Necessary modules.
 """
 ###~~~~~~~~~~~~~~~~~~~~~~~~~~~###
 
-def add_string(a):
+def make_ID_number(a):
     # Concatenate all elements in two columns in array together.
-    # Add in trailing zeros to make unique identifier.   
+    # Concatenate trailing zeros to make unique identifier.   
     return float(str(int(a[0])).zfill(3) + str(int(a[1])).zfill(8))
 
 
@@ -169,7 +174,7 @@ for path2vtu in vtus:
     vtkOut = vtkReader.GetOutput()
     vtkScalars = vtkOut.GetPointData().GetScalars('EverythingExcept::Time')
     time = np.array(vtkScalars.GetTuple1(0))
-    time_line = np.append(time_line, (time / 3.1536e+13))
+    time_line = np.append(time_line, (time / Ma_in_seconds))
 
 #----------------------------------
 
@@ -197,12 +202,12 @@ with h5py.File('Pourquoi.particles.SubMelt.h5part', 'r') as h5f:
     # repeats.
                                                                                                                                                                
     totalid = np.array(list(zip(procid_melt, partid_melt)))
-    totalid_melt = np.apply_along_axis(add_string, axis=1, arr=totalid)
+    totalid_melt = np.apply_along_axis(make_ID_number, axis=1, arr=totalid)
         
     #----------------------------------
     
     # loop through each processor ID used to generate Fluidity model.
-    for i in range(1,29,1):
+    for i in range(1,9,1):
    
         mask_proc = (totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))
 
@@ -246,11 +251,11 @@ with h5py.File('Pourquoi.particles.SubMelt.h5part', 'r') as h5f:
                     mask = (totalid_proc == ids)
                     time_step = time_step_proc[mask]
                     partx = partx_proc[mask] / 1000.
-                    party = ((Max_Y_Axis - party_proc[mask]) * grav * density) / 1e9
+                    party = ((Max_Y_Axis - party_proc[mask]) * grav * density) / const.giga
                     parttemp = parttemp_proc[mask]
                     partKatzF = partKatzF_proc[mask]
                     partKatzFdiff = partKatzFdiff_proc[mask]
-                    partKatzFrate = partKatzFrate_proc[mask] * 3.1536e+13
+                    partKatzFrate = partKatzFrate_proc[mask] * Ma_in_seconds
                     partKatzFmax = partKatzFmax_proc[mask]
                     partlatent = partlatent_proc[mask]
                     partid = totalid_proc[mask]
@@ -266,7 +271,7 @@ with h5py.File('Pourquoi.particles.SubMelt.h5part', 'r') as h5f:
                     partupwelling = np.empty(np.size(party))
                     partupwelling[0] = 0.                    
                     for i, Xi in enumerate(party[1:]):
-                        partupwelling[i] = (((party[i] - party[i-1]) * 1e11 / (grav * density)) * -1.) / ((time_line[int(time_step[i])] - time_line[int(time_step[i-1])]) * 1e6)                      
+                        partupwelling[i] = (((party[i] - party[i-1]) * 1e11 / (grav * density)) * -1.) / ((time_line[int(time_step[i])] - time_line[int(time_step[i-1])]) * const.mega)                      
                     
                     #----------------------------------
                     
@@ -310,7 +315,7 @@ with h5py.File('Pourquoi.particles.SubMelt.h5part', 'r') as h5f:
     
                         # Melt Composition Calculation for Each Particle
                
-                        el_cl = Melt.Ball_Fluidity(Tp, eNd, Conc1, Conc2, Part, VAL, RI, elements, party, parttemp, partKatzF)
+                        el_cl = Melt.calc_particle_comp(Tp, eNd, Conc1, Conc2, Part, VAL, RI, elements, party, parttemp, partKatzF)
            
                         # Update final dictionary
                            
