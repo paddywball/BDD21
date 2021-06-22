@@ -499,7 +499,7 @@ class Fluidity_Chem:
         T = np.append(T_0, T)
         X_full = np.append(X_0, X_full)
 
-        # Extra melt fraction step to finish runga kutta scheme.
+        # Extra melt fraction step to finish Runge Kutta scheme.
         X_rk = X_full[-1] + X_inc
         # Generate Melt Path at X_inc Intervals                
         X = np.arange(X_0, (X_rk+X_inc), X_inc)
@@ -509,7 +509,7 @@ class Fluidity_Chem:
         P = np.interp(X, X_full, P) # GPa
 
         # Convert to Kelvin
-        T = T + 273.
+        T = T + 273.15
 
         return P, T, X
 

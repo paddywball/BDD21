@@ -193,7 +193,7 @@ with h5py.File('Pourquoi.particles.SubMelt.h5part', 'r') as h5f:
         time_step_melt = np.append(time_step_melt, ((h5f['Step#' + str(i)]['Katz1'][()] * 0.) + i ))
 
     # Combine particle ID and processor ID together to make a unique identifier for each particle.
-    # IDs are followed by a series of zeros to ensure same structure for each particle and no acciendental
+    # IDs are followed by a series of zeros to ensure same structure for each particle and no accidental
     # repeats.
                                                                                                                                                                
     totalid = np.array(list(zip(procid_melt, partid_melt)))
@@ -204,27 +204,31 @@ with h5py.File('Pourquoi.particles.SubMelt.h5part', 'r') as h5f:
     # loop through each processor ID used to generate Fluidity model.
     for i in range(1,29,1):
    
+        mask_proc = (totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))
+
         # Check if particles were calculated on processor i.
-        time_step_proc = time_step_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
+        time_step_proc = time_step_melt[mask_proc]
            
         if (len(time_step_proc) > 0):
             
-            # Filter to only include particles where melting has occured by checking melt fraction > 0 at last timestep.
-            id_proc_1 = totalid_melt[(partKatzFmax_melt > 0.) & (time_step_melt == (max_num_steps - 1)) & (totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            # Filter to only include paticles and time steps where melting occurred during time steps of interest
-            id_proc_2 = totalid_melt[(partKatzFdiff_melt > 0.) & (totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            id_proc = np.intersect1d(id_proc_1, id_proc_2)
-
             # Filter relevant data for processor i
-            partx_proc = partx_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            party_proc = party_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            parttemp_proc = parttemp_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1)*100000000.))]
-            partKatzF_proc = partKatzF_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            partKatzFdiff_proc = partKatzFdiff_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            partKatzFrate_proc = partKatzFrate_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            partKatzFmax_proc = partKatzFmax_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            partlatent_proc = partlatent_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
-            totalid_proc = totalid_melt[(totalid_melt > (i*100000000.)) & (totalid_melt < ((i+1.)*100000000.))]
+            partx_proc = partx_melt[mask_proc]
+            party_proc = party_melt[mask_proc]
+            parttemp_proc = parttemp_melt[mask_proc]
+            partKatzF_proc = partKatzF_melt[mask_proc]
+            partKatzFdiff_proc = partKatzFdiff_melt[mask_proc]
+            partKatzFrate_proc = partKatzFrate_melt[mask_proc]
+            partKatzFmax_proc = partKatzFmax_melt[mask_proc]
+            partlatent_proc = partlatent_melt[mask_proc]
+            totalid_proc = totalid_melt[mask_proc]
+
+            # Filter to only include particles where melting has occured by checking melt fraction > 0 at last timestep.
+            # Filter to only include paticles and time steps where melting occurred during time steps of interest
+            mask_melt = (partKatzFmax_melt > 0.) & (time_step_melt == (max_num_steps - 1)) & \
+                        (partKatzFdiff_melt > 0.) & \
+                        mask_proc
+            id_proc = totalid_melt[mask_melt]
+
 
             #----------------------------------
             
@@ -239,16 +243,17 @@ with h5py.File('Pourquoi.particles.SubMelt.h5part', 'r') as h5f:
                     
                     # Find all data associated with individual particle 
                     ids = id_proc[j]
-                    time_step = time_step_proc[(totalid_proc == ids)]
-                    partx = partx_proc[(totalid_proc == ids)] / 1000.
-                    party = ((Max_Y_Axis - party_proc[(totalid_proc == ids)]) * grav * density) / 1e9
-                    parttemp = parttemp_proc[(totalid_proc == ids)]
-                    partKatzF = partKatzF_proc[(totalid_proc == ids)]
-                    partKatzFdiff = partKatzFdiff_proc[(totalid_proc == ids)]
-                    partKatzFrate = partKatzFrate_proc[(totalid_proc == ids)] * 3.1536e+13
-                    partKatzFmax = partKatzFmax_proc[(totalid_proc == ids)]
-                    partlatent = partlatent_proc[(totalid_proc == ids)]
-                    partid = totalid_proc[(totalid_proc == ids)]
+                    mask = (totalid_proc == ids)
+                    time_step = time_step_proc[mask]
+                    partx = partx_proc[mask] / 1000.
+                    party = ((Max_Y_Axis - party_proc[mask]) * grav * density) / 1e9
+                    parttemp = parttemp_proc[mask]
+                    partKatzF = partKatzF_proc[mask]
+                    partKatzFdiff = partKatzFdiff_proc[mask]
+                    partKatzFrate = partKatzFrate_proc[mask] * 3.1536e+13
+                    partKatzFmax = partKatzFmax_proc[mask]
+                    partlatent = partlatent_proc[mask]
+                    partid = totalid_proc[mask]
 
                     # Make array of time through model for particle
 
@@ -327,10 +332,8 @@ with h5py.File('Pourquoi.particles.SubMelt.h5part', 'r') as h5f:
 
 #----------------------------------
 
-# Save dictionary of particle data to an output file per processer used to run script.
-       
-for ii in range(max_cpu): 
-    if rank == ii:
-        df = pd.DataFrame.from_records(final)
-        df.to_csv(str('Full_model%i' %(rank) + '.csv'))
+# Save dictionary of particle data to an output file per processor used to run script.
+
+df = pd.DataFrame.from_records(final)
+df.to_csv(str('Full_model%i' %(rank) + '.csv'))
 
