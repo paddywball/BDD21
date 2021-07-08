@@ -773,7 +773,7 @@ class Fluidity_Chem:
 
                         if X[i] < X_spl_in:
                             F_Al = F_Al_gnt
-                            Mg_num = F_Al_gnt
+                            Mg_num = Mg_num_gnt
                     
                         elif ((X[i] >= X_spl_in) and (X[i] < X_gnt_out)):
                             F_Al = ((F_Al_gnt * (X_gnt_out - X[i])/(X_gnt_out - X_spl_in)) + (F_Al_spl * (X[i] - X_spl_in)/(X_gnt_out - X_spl_in)))
@@ -825,7 +825,7 @@ class Fluidity_Chem:
                         ri_Mg = 0.72 * 10.**-10.
                         
                         # Calculate D using lattice strain EQ (EQ 4 in Supplementary Materials).
-                        Dn[str(j)][i] = np.exp(-4.*np.pi*const.Avagadro*E_v2*((ri_Mg/2.)*(ri_Mg**2. - ri[1]**2.)+(1./3.)*(ri[1]**3. - ri_Mg**3.))/(const.R*T[i]))
+                        Dn[str(j)][i] = np.exp(-4.*np.pi*const.Avagadro*E_v2*((ro_v2/2.)*(ri_Mg**2. - ri[1]**2.)+(1./3.)*(ri[1]**3. - ri_Mg**3.))/(const.R*T[i]))
 
                     # If valency = 3+ calculate D using lattice strain EQ (EQ 4 in Supplementary Materials).
                     elif val == 3.:
@@ -847,11 +847,11 @@ class Fluidity_Chem:
                     X_Al_T_spl = (-0.177 * X[i]) + 0.154
                     X_Al_M1_spl = (-0.438 * X[i]) + 0.137
                     X_Mg_M1_spl = (0.425 * X[i]) + 0.741
-                    X_Mg_Mel_spl = (0.191 * X[i]) + 0.793
+                    X_Mg_Mel_spl = (0.14 * X[i]) + 0.722
                     X_Mg_M2_gnt = (0.422 * X[i]) + 0.547
                     X_Al_T_gnt = (-0.013 * X[i]) + 0.061
                     X_Al_M1_gnt = (-0.114 * X[i]) + 0.099
-                    X_Mg_M1_gnt = (0.14 * X[i]) + 0.722
+                    X_Mg_M1_gnt = (0.191 * X[i]) + 0.793
                     X_Mg_Mel_gnt = (0.207 * X[i]) + 0.701                    
                     
                     # Clinopyroxene changes chemical composition as a function of X
@@ -927,12 +927,12 @@ class Fluidity_Chem:
                         # ro from (Wood and Blundy, 2014, Treatise)
                         ro_v4 = ro * 10.**-10.
                         # Using parameterisation of Landwehr et al., 2001 for Th
-                        ri_Th = 1.035 * 10.**-10.
+                        ri_Th = 1.05 * 10.**-10.
                         Y_Mg_M1 = np.exp(((1. - X_Mg_M1)**2.) * 902. / T[i])
                         Y_Th_M2 = np.exp(((ro_v4/2.)*(ri_Th - ro_v4)**2. + (1./3.)*(ri_Th - ro_v4)**3.)*(4*np.pi*const.Avagadro*E_v4)/(const.R*T[i])) 
                         D_Th = np.exp((214790. - (175.5*T[i]) + (16420.*P[i]) - (1500.*P[i]**2.))/const.R*T[i]) * X_Mg_Mel / (X_Mg_M1 * Y_Mg_M1 * Y_Th_M2)
                         b = (ro_v4/2.)*(ri_Th**2. - ri[1]**2.) + (1./3.)*(ri[1]**3. - ri_Th**3.)
-                        Dn[str(j)][i] = D_Th*np.exp((-910.17*E_v4*b)/T[i])
+                        Dn[str(j)][i] = D_Th*np.exp((-4. * np.pi * const.Avagadro * E_v4 * b)/(const.R*T[i]))
                     
                     # Hard to parameterize, using constant values instead (McKenzie and O'Nions, 1995).
                     elif val == 5.:
@@ -1060,7 +1060,7 @@ class Fluidity_Chem:
                 cs[i+1] = cs_0
             else:
                 # Once concentration of element in the solid is exhausted cs and cl = 0.
-                if (cs[i] > 0.0001):
+                if (cs[i]/cs[0] > 0.0001):
                     k1 = 1. * self.calc_dcs_dX( X[i],             cs[i],                D_bar[i], P_bar[i] )
                     k2 = 1. * self.calc_dcs_dX( X[i] + 0.5*X_inc, cs[i] + X_inc*0.5*k1, ((D_bar[i]+D_bar[i+1]) / 2.), ((P_bar[i]+P_bar[i+1]) / 2.) )
                     k3 = 1. * self.calc_dcs_dX( X[i] + 0.5*X_inc, cs[i] + X_inc*0.5*k2, ((D_bar[i]+D_bar[i+1]) / 2.), ((P_bar[i]+P_bar[i+1]) / 2.) )
