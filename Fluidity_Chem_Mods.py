@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import fsolve
+import scipy.constants as const
 
 """
 Class of modules used in Fluidity_Optimize_Parallel_Example.py
@@ -684,7 +685,7 @@ class Fluidity_Chem:
     
 #-------------
     
-    def calc_depth_mineralogy_Ball(self, X, P, X_gnt_out, X_spl_in, eNd):
+    def calc_depth_mineralogy(self, X, P, X_gnt_out, X_spl_in, eNd):
         """
         Calculates changing mineralogy as a function of depth
         taking into account the spinel-garnet-transition zone.
@@ -720,7 +721,7 @@ class Fluidity_Chem:
     
 #-------------  
 
-    def fun_D_n(self, Do, E, ro, ri, T):
+    def calc_Brice1975(self, Do, E, ro, ri, T):
         """
         Lattice strain equation (Brice, 1975, Wood and Blundy, 1997).
         EQ 4 in Supplementary Material
@@ -732,7 +733,7 @@ class Fluidity_Chem:
 
 #-------------
 
-    def calc_Dn_Ball(self, P, T, X, ri, D, val, X_spl_in, X_gnt_out):
+    def calc_Dn(self, P, T, X, ri, D, val, X_spl_in, X_gnt_out):
         """
         Calculates D_bar and P_bar (bulk partition in solid and melt) as a function of depth.
         EQ 8 in Main Text.
@@ -790,7 +791,7 @@ class Fluidity_Chem:
                         E = 426.  
                         
                         # Caluclate D using lattice strain EQ (EQ 4 in Supplementary Materials).
-                        Dn[str(j)][i] = self.fun_D_n( Do, E * (10.**9.), ro * (10.**-10.), ri[0], T[i])
+                        Dn[str(j)][i] = self.calc_Brice1975( Do, E * (10.**9.), ro * (10.**-10.), ri[0], T[i])
                    
                     # If Valancy is not 3+ then use constant value for D
                     # from McKenzie and O'Nions, 1995.
@@ -828,7 +829,7 @@ class Fluidity_Chem:
 
                     # If valency = 3+ calculate D using lattice strain EQ (EQ 4 in Supplementary Materials).
                     elif val == 3.:
-                        Dn[str(j)][i] = self.fun_D_n( Do, E * (10.**9.), ro * (10.**-10.), ri[1], T[i])
+                        Dn[str(j)][i] = self.calc_Brice1975( Do, E * (10.**9.), ro * (10.**-10.), ri[1], T[i])
                     
                     # If Valancy is not 3+ or 2+ then use constant value for D
                     # from McKenzie and O'Nions, 1995.                    
@@ -911,12 +912,12 @@ class Fluidity_Chem:
                         E_v2 = (2./3.) * E * 10.**9.
                         # ro from (Wood and Blundy, 2014, Treatise)
                         ro_v2 = (ro + 0.06) * 10.**-10.
-                        Dn[str(j)][i] = self.fun_D_n( Do_v2, E_v2, ro_v2, ri[1], T[i])
+                        Dn[str(j)][i] = self.calc_Brice1975( Do_v2, E_v2, ro_v2, ri[1], T[i])
                         
                     # If valency = 3+ calculate D using lattice strain EQ (EQ 4 in Supplementary Materials).
                     elif val == 3.:
                         
-                        Dn[str(j)][i] = self.fun_D_n( Do, E * (10.**9.), ro * (10.**-10.), ri[1], T[i])
+                        Dn[str(j)][i] = self.calc_Brice1975( Do, E * (10.**9.), ro * (10.**-10.), ri[1], T[i])
                    
                     # Wood and Blundy, 2014, Treatise parameterization as described by
                     # EQ 32-38 in Supplementary Materials.
@@ -963,7 +964,7 @@ class Fluidity_Chem:
 
                     # If valency = 3+ calculate D using lattice strain EQ (EQ 4 in Supplementary Materials).  
                     if val == 3.:
-                        Dn[str(j)][i] = self.fun_D_n(Do, E * 10.**9., ro * 10.**-10., ri[1], T[i])
+                        Dn[str(j)][i] = self.calc_Brice1975(Do, E * 10.**9., ro * 10.**-10., ri[1], T[i])
                     
                     # For 2+ cations constants for lattice strain equation calculated
                     # using parameterization from Wood and Blundy, 2014
@@ -984,7 +985,7 @@ class Fluidity_Chem:
                         Do_v4 = 4.38
                         E_v4 = 2753 * 10.**9.
                         ro_v4 = 0.6626 * 10.**-10.
-                        Dn[str(j)][i] = self.fun_D_n(Do_v4, E_v4, ro_v4, ri[1], T[i])
+                        Dn[str(j)][i] = self.calc_Brice1975(Do_v4, E_v4, ro_v4, ri[1], T[i])
 
                     # valency of +1 and +5 too poorly parameterized
                     # and so constant values are used from McKenzie and O'Nions, (1995).
@@ -995,7 +996,7 @@ class Fluidity_Chem:
 
 #-------------
 
-    def calc_D_Bar_P_Bar_Ball(self, X, Dn, Fn, pn):
+    def calc_D_Bar_P_Bar(self, X, Dn, Fn, pn):
         """
         Calculates D_bar and P_bar (bulk partition in solid and melt) as a function of depth.
         j 1-5 = ol, opx, cpx, plg, spl, gnt
@@ -1086,7 +1087,7 @@ class Fluidity_Chem:
         # Determine Melt Fractions Corresponding to Mantle Phase Transitions.
         X_spl_out, X_plg_in, X_gnt_out, X_spl_in = self.phase_X(X_km, h_km, h_dash)
         # Calculate Depth Dependent Mineralogy and Melt Stoichiometry.
-        Fn, pn = self.calc_depth_mineralogy_Ball(X, P, X_gnt_out, X_spl_in, eNd)
+        Fn, pn = self.calc_depth_mineralogy(X, P, X_gnt_out, X_spl_in, eNd)
 
         return Fn, pn, X_gnt_out, X_spl_in  
 
@@ -1140,10 +1141,10 @@ class Fluidity_Chem:
                 cs_0 = (((10 - eNd)/10.) * Conc1[str(i)]) + ((eNd/10.) * Conc2[str(i)])
        
                 # Calculate partition coefficients for each mineral as function of PTX (Dn).
-                Dn = self.calc_Dn_Ball(P, T, X, ri, D, val, X_spl_in, X_gnt_out)
+                Dn = self.calc_Dn(P, T, X, ri, D, val, X_spl_in, X_gnt_out)
                 
                 # Calculate bulk partition coefficient in the solid (D_bar) and melt (P_bar).
-                D_bar, P_bar = self.calc_D_Bar_P_Bar_Ball(X, Dn, Fn, pn)
+                D_bar, P_bar = self.calc_D_Bar_P_Bar(X, Dn, Fn, pn)
                 
                 # Calculate cl 
                 cl= self.calc_melt_comp(cs_0, X, D_bar, P_bar)
